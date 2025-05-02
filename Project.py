@@ -12,7 +12,7 @@ With duration of 10 seconds
 
 """
 
-N = 40 # Number of sound samples
+N = 1 # Number of sound samples
 duration = 3 # Duration of the signal
 
 frequencies_3rd = np.array([220.00, 246.94, 130.81, 146.83, 164.81, 174.61, 196.00, 220.00])
@@ -21,17 +21,20 @@ frequencies_4th = 2 * frequencies_3rd
 t = np.linspace(0, duration, 3 * 44100) # 10 seconds of time
 F = np.random.choice(frequencies_3rd, N) # Random frequencies from the 4th octave
 f = np.random.choice(frequencies_4th, N) # Random frequencies from the 3rd octave
-T = np.random.uniform(1, 10, N) # Random time from 1 to 4 seconds
+
+start = np.random.randint(0, 4, N) # Random time from 0 to 4 seconds
+end = start + 0.5 
+
 
 harmonics = np.array( [np.sin(2*np.pi * f[i] * t) + 
-                    np.sin(2*np.pi * F[i] * t) * (t <= T[i]) for i in range(N)] )
+                    np.sin(2*np.pi * F[i] * t) * (t >= start[i]) * (t <= end[i]) for i in range(N)] )
 # Create the harmonics
 # Each harmonic is a sum of two sine waves: one from the 3rd octave and one from the 4th octave
 
 x = np.sum(harmonics, axis=0) # Sum of the harmonics
 # axis is set to 0 to sum along the columns
 
-plt.plot(t, x) # Plot the sound
+plt.plot(t[:10000], x[:10000]) # Plot the sound
 plt.title('Sound Wave')
 plt.xlabel('Time (s)')
 plt.ylabel('Amplitude')
@@ -41,6 +44,7 @@ plt.show() # Show the plot
 sd.play(x, 3 * 44100) # Play the sound
 sd.wait() # Wait until the sound is finished playing
 
+x *= 10 # Amplify the sound
 
 """
 
@@ -75,7 +79,7 @@ xn = x + n
 # Plot of Noise Signal 
 
 plt.figure()
-plt.plot(t, xn)
+plt.plot(t[:10000], xn[:10000])
 plt.title(f"Noisy Signal (Time Domain) — bins {fn1}, {fn2}")
 plt.xlabel("Time [s]")
 plt.ylabel("Amplitude")
@@ -110,29 +114,29 @@ Xn = fft(xn)
 mag = 2/N * np.abs(Xn[:N//2])
 freq_axis = np.linspace(0, 512, N//2)
 
-# Peak identification
-peaks = np.argsort(mag)[-2:]
-detected = np.sort(peaks)  # sort for readability
-print(f"Detected noise bins (spectrum): {detected}")
+# Peak identification (find indices of the two largest peaks)
+peak_indices = np.argsort(mag)[-2:]  # Indices of the two largest peaks
+detected_frequencies = freq_axis[peak_indices]  # Map indices to frequencies
+print(f"Detected noise frequencies (Hz): {detected_frequencies}")
 
 
-#Noise Removal by subtracting sususoids 
+# Noise removal by subtracting sinusoids at the detected frequencies
 x_filtered = xn \
-    - np.sin(2 * np.pi * detected[0] * t) \
-    - np.sin(2 * np.pi * detected[1] * t)
+    - np.sin(2 * np.pi * detected_frequencies[0] * t) \
+    - np.sin(2 * np.pi * detected_frequencies[1] * t)
 
-#Plot of signal after noise removal
+# Plot of signal after noise removal
 plt.figure()
-plt.plot(t, x_filtered)
+plt.plot(t[:10000], x_filtered[:10000])
 plt.title("Filtered Signal (Time Domain)")
 plt.xlabel("Time [s]")
 plt.ylabel("Amplitude")
+plt.grid()
 plt.show()
 
 # Frequency domain of the filtered signal
 X_filtered = fft(x_filtered)  # Compute the FFT of the filtered signal
 x_f_filtered = 2 / N * np.abs(X_filtered[:int(N / 2)])  # Magnitude spectrum
-freq_axis = np.linspace(0, 512, int(N / 2))  # Frequency axis up to 512 Hz
 
 # Plot the frequency domain of the filtered signal
 plt.figure()
