@@ -1,152 +1,150 @@
+# 1 2 3 4 5 6 7 8 9 
+# بسم الله الرحمن الرحيم
+
+
 import numpy as np
 import matplotlib.pyplot as plt
-
 from scipy.fftpack import fft
 import sounddevice as sd
 
 
+fs = 44100  # number of samples per second
+note_duration = 0.5
+
+# Define frequencies
+notes_3rd = {'C': 130.81, 'D': 146.83, 'E': 164.81, 'F': 174.61,
+             'G': 196.00, 'A': 220.00, ' ': 0.0}
+notes_4th = {k: 2 * v for k, v in notes_3rd.items()}
+
+# Melody with rest between two phrases
+melody = ['C', 'C', 'G', 'G', 'A', 'A', 'G',
+          ' ',  # ← 0.5s gap in the song
+          'F', 'F', 'E', 'E', 'D', 'D', 'C', ' ']
+
+# f = third octave, F = fourth octave
+f = np.array([notes_3rd[n] for n in melody])
+F = np.array([notes_4th[n] for n in melody])
+
+# Set timings
+t = np.array([i * note_duration for i in range(len(melody))])
+T = t + note_duration
+
+# Time array
+duration = T[-1]
+time = np.linspace(0, duration, int(fs * duration))
+
+# Initialize the signal
+x = np.zeros_like(time)
+
+# i know i shouldnt use a for loop in numpy bas ana wallahi me4 3aref a3melha ezay
+for i in range(len(melody)):
+    if f[i] == 0.0:
+        continue  # do noting for the duration, aka el signal hateb2a fadya fel duration
+    
+    # Calculate start and end indices for the note
+    start_idx = int(t[i] * fs)
+    end_idx = int(T[i] * fs)
+
+    note_time = np.linspace(0, note_duration, end_idx - start_idx)
+
+    # Generate a temporary signal (two octaves)
+    signal = np.sin(2*np.pi*f[i]*note_time) + np.sin(2*np.pi*F[i]*note_time)
+
+    # add the temporary signal to the substring of x
+    x[start_idx:end_idx] += signal
+
+
 """
 
-Generate a random signal with random frequencies from the piano (40 samples)
-With duration of 10 seconds
-
-"""
-
-N = 1 # Number of sound samples
-duration = 3 # Duration of the signal
-
-frequencies_3rd = np.array([220.00, 246.94, 130.81, 146.83, 164.81, 174.61, 196.00, 220.00])
-frequencies_4th = 2 * frequencies_3rd
-
-t = np.linspace(0, duration, 3 * 44100) # 10 seconds of time
-F = np.random.choice(frequencies_3rd, N) # Random frequencies from the 4th octave
-f = np.random.choice(frequencies_4th, N) # Random frequencies from the 3rd octave
-
-start = np.random.randint(0, 4, N) # Random time from 0 to 4 seconds
-end = start + 0.5 
-
-
-harmonics = np.array( [np.sin(2*np.pi * f[i] * t) + 
-                    np.sin(2*np.pi * F[i] * t) * (t >= start[i]) * (t <= end[i]) for i in range(N)] )
-# Create the harmonics
-# Each harmonic is a sum of two sine waves: one from the 3rd octave and one from the 4th octave
-
-x = np.sum(harmonics, axis=0) # Sum of the harmonics
-# axis is set to 0 to sum along the columns
-
-plt.plot(t[:10000], x[:10000]) # Plot the sound
-plt.title('Sound Wave')
-plt.xlabel('Time (s)')
-plt.ylabel('Amplitude')
-plt.grid()
-plt.show() # Show the plot
-
-sd.play(x, 3 * 44100) # Play the sound
-sd.wait() # Wait until the sound is finished playing
-
-x *= 10 # Amplify the sound
-
-"""
-
-Add noise to the signal, plot the noisy signal
+Yehia, continue your code here
+Generate noise by adding two sinusoids with random frequencies
 
 """
 
 
-N = 3 * 44100
-f = np.linspace(0, 512, int(N/2))
-X = fft(x)
-x_f = 2/N * np.abs(X[:int(N/2)])
+N = len(x)
+f = np.linspace(0, 44100/2, int(N / 2)) # frequency axis
 
-plt.figure()
-plt.plot(f, x_f)
-plt.title("Frequency Domain (Initial Signal)")
-plt.xlabel("Frequency (Hz)")
-plt.ylabel("Magnitude")
-plt.grid()
-plt.show()
-
+X = fft(x) # Compute the fourier transform of the original signal
+x_f = 2/N * np.abs(X[:int(N//2)]) 
 
 # choose two random frequencies for noise generation
 # from the range of 0 to 512 Hz
 fn1, fn2 = np.random.randint(0, 512, 2)
 
 # Noise Generation 
-n = np.sin(2 * np.pi * fn1 * t) + np.sin(2 * np.pi * fn2 * t)
-xn = x + n
-
-
-# Plot of Noise Signal 
-
-plt.figure()
-plt.plot(t[:10000], xn[:10000])
-plt.title(f"Noisy Signal (Time Domain) — bins {fn1}, {fn2}")
-plt.xlabel("Time [s]")
-plt.ylabel("Amplitude")
-plt.show()
+noise = np.sin(2 * np.pi * fn1 * time) + np.sin(2 * np.pi * fn2 * time)  # Generate a noise signal
+xn = x + noise  # Add noise to the original signal
 
 
 # Frequency domain of the noisy signal
-Xn = fft(xn)  # Compute the FFT of the noisy signal
-x_f_noisy = 2 / N * np.abs(Xn[:int(N / 2)])  # Magnitude spectrum
-freq_axis = np.linspace(0, 512, int(N / 2))  # Frequency axis up to 512 Hz
-
-# Plot the frequency domain of the noisy signal
-plt.figure()
-plt.plot(freq_axis, x_f_noisy)
-plt.title("Frequency Domain (Noisy Signal)")
-plt.xlabel("Frequency (Hz)")
-plt.ylabel("Magnitude")
-plt.grid()
-plt.show()
+Xn = fft(xn)  # Compute the fourier transform of the noisy signal
+Xn = (2/N) * np.abs(Xn[:int(N / 2)])  # Magnitude spectrum
 
 
 """
-Remove noise from the signal using FFT
-Plot the filtered signal
+Yehia, continue your code here
+Remove noise from the signal using the FFT
 
 """
-
-
-
-#FFT Computation 
-Xn = fft(xn)
-mag = 2/N * np.abs(Xn[:N//2])
-freq_axis = np.linspace(0, 512, N//2)
 
 # Peak identification (find indices of the two largest peaks)
-peak_indices = np.argsort(mag)[-2:]  # Indices of the two largest peaks
-detected_frequencies = freq_axis[peak_indices]  # Map indices to frequencies
-print(f"Detected noise frequencies (Hz): {detected_frequencies}")
+peak_indices = np.argsort(Xn)[-2:]  # Get indices of the 2 largest peaks
+detected_frequencies = f[peak_indices]  # Get the detected frequencies
 
+noise = np.zeros_like(xn)  # Initialize noise array
+noise += np.sin(2*np.pi*detected_frequencies[0]*time) + np.sin(2*np.pi*detected_frequencies[1]*time)  # Generate noise signal
+x_filtered = xn - noise  # Remove noise from the original signal
 
-# Noise removal by subtracting sinusoids at the detected frequencies
-x_filtered = xn \
-    - np.sin(2 * np.pi * detected_frequencies[0] * t) \
-    - np.sin(2 * np.pi * detected_frequencies[1] * t)
-
-# Plot of signal after noise removal
-plt.figure()
-plt.plot(t[:10000], x_filtered[:10000])
-plt.title("Filtered Signal (Time Domain)")
-plt.xlabel("Time [s]")
-plt.ylabel("Amplitude")
-plt.grid()
-plt.show()
 
 # Frequency domain of the filtered signal
-X_filtered = fft(x_filtered)  # Compute the FFT of the filtered signal
-x_f_filtered = 2 / N * np.abs(X_filtered[:int(N / 2)])  # Magnitude spectrum
+x_f_filtered = fft(x_filtered) # Compute the fourier transform of the filtered signal
+x_f_filtered = 2/N * np.abs(x_f_filtered[:int(N//2)]) 
 
-# Plot the frequency domain of the filtered signal
-plt.figure()
-plt.plot(freq_axis, x_f_filtered)
-plt.title("Frequency Domain (Filtered Signal)")
-plt.xlabel("Frequency (Hz)")
-plt.ylabel("Magnitude")
+
+# print the noise frequencies and the detected frequencies 
+# used for debugging
+# print(f"Noise frequencies: {fn1}, {fn2}")
+# print(f"Detected frequencies: {detected_frequencies[0]}, {detected_frequencies[1]}")
+
+
+"""
+
+Yehia, plot the signals in time and frequency domain here
+
+"""
+
+plt.subplot(3, 1, 1)
+plt.plot(time[:7000], x[:7000])
+plt.grid()
+plt.subplot(3, 1, 2)
+plt.plot(time[:7000], xn[:7000])
+plt.grid()
+plt.subplot(3, 1, 3)
+plt.plot(time[:7000], x_filtered[:7000])
 plt.grid()
 plt.show()
 
+plt.subplot(3, 1, 1)
+plt.plot(f[:7000], x_f[:7000])
+plt.grid()
+plt.subplot(3, 1, 2)
+plt.plot(f[:7000], Xn[:7000])
+plt.grid()
+plt.subplot(3, 1, 3)
+plt.plot(f[:7000], x_f_filtered[:7000])
+plt.grid()
+plt.show()
+
+
+# Play the original signal
+# sd.play(x, fs)
+# sd.wait()
+
+# Play the noisy signal
+# sd.play(xn, fs)
+# sd.wait()
+
 # Play the filtered signal
-sd.play(x_filtered, 3 * 44100)
-sd.wait()
+# sd.play(x_filtered, fs)
+# sd.wait()
