@@ -1,3 +1,4 @@
+
 # 1 2 3 4 5 6 7 8 9 
 # بسم الله الرحمن الرحيم
 
@@ -15,7 +16,7 @@ note_duration = 0.5
 notes_3rd = {'C': 130.81, 'D': 146.83, 'E': 164.81, 'F': 174.61,
              'G': 196.00, 'A': 220.00, ' ': 0.0}
 notes_4th = {k: 2 * v for k, v in notes_3rd.items()}
-
+ 
 # Melody with rest between two phrases
 melody = ['C', 'C', 'G', 'G', 'A', 'A', 'G',
           ' ',  # ← 0.5s gap in the song
@@ -81,7 +82,6 @@ xn = x + noise  # Add noise to the original signal
 Xn = fft(xn)  # Compute the fourier transform of the noisy signal
 Xn = (2/N) * np.abs(Xn[:int(N / 2)])  # Magnitude spectrum
 
-
 """
 Yehia, continue your code here
 Remove noise from the signal using the FFT
@@ -138,13 +138,13 @@ plt.show()
 
 
 # Play the original signal
-# sd.play(x, fs)
-# sd.wait()
+sd.play(x, fs)
+sd.wait()
 
 # Play the noisy signal
-# sd.play(xn, fs)
-# sd.wait()
+sd.play(xn, fs)
+sd.wait()
 
 # Play the filtered signal
-# sd.play(x_filtered, fs)
-# sd.wait()
+sd.play(x_filtered, fs)
+sd.wait()
